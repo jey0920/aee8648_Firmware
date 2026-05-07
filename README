@@ -1,0 +1,24 @@
+# RAPIDO Firmware — BLE Wireless Command Protocol
+
+Firmware source code for the RAPIDO wireless optofluidic 
+neuromodulation system, as described in:
+
+> [Eun Young Jeong†, Jong Woo Park†, Sungwoo Cho, Donggi Han, Choong Yeon Kim, Sung Woo Kim, Wonhee Lee, Wha Young Kim*, Jeong-Hoon Kim*, Jae-Woong Jeong*]. 
+> IoT-enabled wireless neural implant for chronic, programmable neuropharmacology and optogenetics. 
+> *Science Advances* (in revision).
+
+## Hardware
+- SoC module: EYSHSNZWZ (Taiyo Yuden, nRF52840)
+
+## Build environment
+- Nordic nRF5 SDK v15.3.0
+- SoftDevice S140 v6.1.1
+- Segger Embedded Studio v5.x
+
+## Dependencies
+`ble_cus.c/.h`, `ble_cus_c.c/.h`, `pin_mapping.h` and all 
+other SDK files are not included. The nRF5 SDK can be downloaded 
+from https://www.nordicsemi.com/Products/Development-software/nRF5-SDK
+
+## License
+See LICENSE.md
