@@ -88,8 +88,6 @@
 #include "peer_manager_handler.h"
 #include "pin_mapping.h"
 
-#define DEVICE_NAME          "Device05" 
-
 /////////////////// Instances of Other Modules ///////////////////////////////
 APP_PWM_INSTANCE(BLE_PWM1, 1); // Create the instance "BLE_PWM" using TIMER1.
 APP_PWM_INSTANCE(BLE_PWM2, 2); // Create the instance "BLE_PWM" using TIMER2.
@@ -113,8 +111,6 @@ static bool ble_pwm1_enable_flag = false;
 static bool ble_pwm2_enable_flag = false;
 static bool ble_pwm3_enable_flag = false;
 
-static bool test_flag            = false;
-
 uint32_t pwm1_frequency = 0;
 uint32_t pwm2_frequency = 0;
 uint32_t pwm3_frequency = 0;
@@ -122,12 +118,6 @@ uint32_t pwm3_frequency = 0;
 uint8_t status_ack[8] = {'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'};
 
 #define SAMPLES_IN_BUFFER 1
-
-static nrf_saadc_value_t m_buffer_pool[2][SAMPLES_IN_BUFFER];
-static nrf_saadc_value_t m_buffer_avg[SAMPLES_IN_BUFFER];
-static nrf_ppi_channel_t m_ppi_channel;
-static uint32_t m_adc_evt_counter;
-volatile uint8_t sample_count = 0;
 
 /////////////// static functions Decleration ////////////////
 static void init_ble_pwm1(uint32_t pin, uint32_t freq, float dutyCycle);
@@ -1016,7 +1006,7 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
     if (data[0] == 'a') {  // set PWM: LED, 5Hz, 10ms duty
       if (ble_pwm1_enable_flag) {  // If LED was already operating, turn off the LED.
         deinit_ble_pwm1();
-        NRF_LOG_INFO("LED was alreday operating. Turining off the LED...");
+        NRF_LOG_INFO("LED was already operating. Turning off the LED...");
       
       } else {
         init_ble_pwm1(OUTPUT_LED, FREQ1, DUTY1);
@@ -1028,7 +1018,7 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
     } else if (data[0] == 'b') {  // set PWM: LED, 10Hz, 10ms duty
       if (ble_pwm1_enable_flag) {  // If LED was already operating, turn off the LED.
         deinit_ble_pwm1();
-        NRF_LOG_INFO("LED was alreday operating. Turining off the LED...");
+        NRF_LOG_INFO("LED was already operating. Turning off the LED...");
       
       } else {
         init_ble_pwm1(OUTPUT_LED, FREQ2, DUTY2);
@@ -1040,7 +1030,7 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
     } else if (data[0] == 'c') {  // set PWM: LED, 20Hz, 10ms duty
       if (ble_pwm1_enable_flag) {  // If LED was already operating, turn off the LED.
         deinit_ble_pwm1();
-        NRF_LOG_INFO("LED was alreday operating. Turining off the LED...");
+        NRF_LOG_INFO("LED was already operating. Turning off the LED...");
       
       } else {
         init_ble_pwm1(OUTPUT_LED, FREQ3, DUTY3);
@@ -1052,7 +1042,7 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
     } else if (data[0] == 'd') {  // set PWM: LED, 40Hz, 10ms duty
       if (ble_pwm1_enable_flag) {  // If LED was already operating, turn off the LED.
         deinit_ble_pwm1();
-        NRF_LOG_INFO("LED was alreday operating. Turining off the LED...");
+        NRF_LOG_INFO("LED was already operating. Turning off the LED...");
       
       } else {
         init_ble_pwm1(OUTPUT_LED, FREQ4, DUTY4);
@@ -1069,7 +1059,7 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
         // N: Actuation time  -> 01-99 sec
         if (app_timer_flag) {  // If pump was already actuating, turn off the pump.
           pump_all_off();
-          NRF_LOG_INFO("Pump was alreday actuating. Turining off the pump(s)...");
+          NRF_LOG_INFO("Pump was already actuating. Turning off the pump(s)...");
       
         } else if ((data[2] == '1') && (data[5] == '1')) {  // Condition #1. Actuate left pump (Lv.1)
           pump_actuation_time = 10*(data[8] - '0') + 1*(data[9] - '0');
@@ -1077,9 +1067,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1095,9 +1085,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1113,9 +1103,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1131,9 +1121,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1149,9 +1139,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1167,9 +1157,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1185,9 +1175,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1207,9 +1197,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1229,9 +1219,9 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
 
           if (pump_actuation_time == 0) {  // If pump actuation time input is 0, turn off the pump.
             pump_all_off();
-            NRF_LOG_INFO("Turining off the pump(s)...");
+            NRF_LOG_INFO("Turning off the pump(s)...");
         
-          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Acutation time: 01-99 sec
+          } else if ((pump_actuation_time > 0) && (pump_actuation_time < 100)) {  // Actuation time: 01-99 sec
             electrolysis_timer_sec = 0;
             err_code = app_timer_start(m_app_timer, PUMP_INTERVAL, NULL);
             app_timer_flag = true;
@@ -1248,7 +1238,7 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
       
       } else {  // If pump actuation command is abnormal, turn off the pump.
         pump_all_off();
-        NRF_LOG_INFO("Non-identified command. Turining off the pump(s)...");
+        NRF_LOG_INFO("Non-identified command. Turning off the pump(s)...");
       }
 
       ble_cus_custom_value_update(&m_cus, status_ack, sizeof(status_ack));
@@ -1257,13 +1247,13 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
       if (ble_pwm1_enable_flag) {
         deinit_ble_pwm1();
       }
-      NRF_LOG_INFO("Turining off the LED...");
+      NRF_LOG_INFO("Turning off the LED...");
 
       ble_cus_custom_value_update(&m_cus, status_ack, sizeof(status_ack));
 
     } else if (data[0] == 'y') {  // Turn off the pumps
       pump_all_off();
-      NRF_LOG_INFO("Turining off the pump(s)...");
+      NRF_LOG_INFO("Turning off the pump(s)...");
 
       ble_cus_custom_value_update(&m_cus, status_ack, sizeof(status_ack));
 
@@ -1386,35 +1376,6 @@ static void timer_init(void) {
   /* timer driver initialization */
   nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
   timer_cfg.bit_width = NRF_TIMER_BIT_WIDTH_32;
-
-  // err_code = nrf_drv_timer_init(&m_timer_1, &timer_cfg, timer_handler);
-  // APP_ERROR_CHECK(err_code);
-
-  // err_code = nrf_drv_timer_init(&m_timer_2, &timer_cfg, timer_handler);
-  // APP_ERROR_CHECK(err_code);
-
-  ///* get the number of ticks for timer to feed in */
-  // uint32_t ticks_input_adc = nrf_drv_timer_us_to_ticks(&m_timer_2, TIMER_ADC_TIMEOUT_US);
-  // uint32_t ticks_input3 = nrf_drv_timer_us_to_ticks(&m_timer_1, TIMER_1_TIMEOUT_US_1);
-  // uint32_t ticks_input4 = nrf_drv_timer_us_to_ticks(&m_timer_1, TIMER_1_TIMEOUT_US_2);
-  // uint32_t ticks_input5 = nrf_drv_timer_us_to_ticks(&m_timer_1, TIMER_1_TIMEOUT_US_3);
-  // uint32_t ticks_input6 = nrf_drv_timer_us_to_ticks(&m_timer_1, TIMER_1_TIMEOUT_US_4);
-
-  ///* setup timer compare channels */
-  // nrf_drv_timer_extended_compare(&m_timer_2,
-  //     NRF_TIMER_CC_CHANNEL0,
-  //     ticks_input_adc,
-  //     NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
-  //     false);
-
-  // nrf_drv_timer_compare(&m_timer_1, NRF_TIMER_CC_CHANNEL0, ticks_input3, false);
-  // nrf_drv_timer_compare(&m_timer_1, NRF_TIMER_CC_CHANNEL1, ticks_input4, false);
-  // nrf_drv_timer_compare(&m_timer_1, NRF_TIMER_CC_CHANNEL2, ticks_input5, false);
-  // nrf_drv_timer_extended_compare(&m_timer_1,
-  //     NRF_TIMER_CC_CHANNEL3,
-  //     ticks_input6,
-  //     NRF_TIMER_SHORT_COMPARE3_CLEAR_MASK,
-  //     false);
 }
 
 
