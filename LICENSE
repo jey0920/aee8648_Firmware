@@ -22,8 +22,13 @@ SOFTWARE.
 
 ---
 
-NOTICE: Portions of this software are derived from the Nordic 
-Semiconductor ASA nRF5 SDK, which is subject to a separate license. 
-The Nordic license is reproduced in NORDIC_LICENSE.txt and applies 
-to all files incorporating Nordic Semiconductor ASA code. Use of 
-this software requires compliance with both licenses.
+## Nordic Semiconductor nRF5 SDK portions
+Portions of this software originate from the Nordic Semiconductor 
+nRF5 SDK and are governed by the Nordic Semiconductor ASA license, 
+reproduced in full in the header of main.c and summarized below:
+
+- Redistribution permitted with original copyright notice retained
+- Use restricted to Nordic Semiconductor ASA integrated circuits
+- Reverse engineering and decompilation of binaries prohibited
+
+The full Nordic license text is reproduced at the top of main.c.
