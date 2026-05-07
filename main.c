@@ -88,10 +88,10 @@
 #include "peer_manager_handler.h"
 #include "pin_mapping.h"
 
+#define DEVICE_NAME "RAPIDO"
+
 /////////////////// Instances of Other Modules ///////////////////////////////
 APP_PWM_INSTANCE(BLE_PWM1, 1); // Create the instance "BLE_PWM" using TIMER1.
-APP_PWM_INSTANCE(BLE_PWM2, 2); // Create the instance "BLE_PWM" using TIMER2.
-APP_PWM_INSTANCE(BLE_PWM3, 3); // Create the instance "BLE_PWM" using TIMER3.
 
 APP_TIMER_DEF(m_app_timer);
 
@@ -103,17 +103,10 @@ static uint8_t m_enc_advdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];            /**< Buf
 static uint8_t m_enc_scan_response_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX]; /**< Buffer for storing an encoded scan data. */
 static nrf_ppi_channel_t m_ppi_channel, ppi_channel_0, ppi_channel_1, ppi_channel_2, ppi_channel_3,
     ppi_channel_4, ppi_channel_5, ppi_channel_6, ppi_channel_7; // ppi channels
-static uint32_t m_adc_evt_counter;                              // adc event counter
-volatile uint8_t buffer_number = 0x01;                          // vairable to change the buffer in adc event and ble send notification
-volatile bool saadc_event_callback = false;                     // callback flag
 
 static bool ble_pwm1_enable_flag = false;
-static bool ble_pwm2_enable_flag = false;
-static bool ble_pwm3_enable_flag = false;
 
 uint32_t pwm1_frequency = 0;
-uint32_t pwm2_frequency = 0;
-uint32_t pwm3_frequency = 0;
 
 uint8_t status_ack[8] = {'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'};
 
@@ -121,12 +114,8 @@ uint8_t status_ack[8] = {'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'};
 
 /////////////// static functions Decleration ////////////////
 static void init_ble_pwm1(uint32_t pin, uint32_t freq, float dutyCycle);
-static void init_ble_pwm2(uint32_t pin, uint32_t freq, float dutyCycle);
-static void init_ble_pwm3(uint32_t pin, uint32_t freq, float dutyCycle);
 
 static void deinit_ble_pwm1();
-static void deinit_ble_pwm2();
-static void deinit_ble_pwm3();
 
 #define CONN_INTERVAL_DEFAULT (uint16_t)(MSEC_TO_UNITS(7.5, UNIT_1_25_MS)) /**< Default connection interval used at connection establishment by central side. */
 
@@ -232,9 +221,6 @@ uint32_t pump_actuation_time     = 0;
 
 #define APP_BLE_OBSERVER_PRIO 3
 
-char value;
-
-volatile uint32_t count = 0;
 typedef struct {
   bool is_connected;
   ble_gap_addr_t address;
@@ -252,14 +238,12 @@ BLE_ADVERTISING_DEF(m_advertising);                    /**< Advertising module i
 BLE_DB_DISCOVERY_DEF(m_db_disc);                       /**< Database discovery module instance. */
 NRF_BLE_SCAN_DEF(m_scan);                              /**< Scanning Module instance. */
 
-volatile bool uart_timer_update = false;
 static uint16_t m_conn_handle_cus_c = BLE_CONN_HANDLE_INVALID;                        /**< Connection handle for the HRS central application. */
 static volatile uint16_t m_conn_handle_num_comp_central = BLE_CONN_HANDLE_INVALID;    /**< Connection handle for the central that needs a numeric comparison button press. */
 static volatile uint16_t m_conn_handle_num_comp_peripheral = BLE_CONN_HANDLE_INVALID; /**< Connection handle for the peripheral that needs a numeric comparison button press. */
 
 static conn_peer_t m_connected_peers[NRF_BLE_LINK_COUNT]; /**< Array of connected peers. */
 
-dht_data_t m_dht_data;
 uint8_t uart_ble_data[2][6]; // 2 arrays of 3 analog values
 uint8_t uart_array_check = 0x00;
 static char *roles_str[] = {
@@ -853,48 +837,6 @@ static void init_ble_pwm1(uint32_t pin, uint32_t freq, float dutyCycle) {
 }
 
 
-// init_ble_pwm2()
-static void init_ble_pwm2(uint32_t pin, uint32_t freq, float dutyCycle) {
-  ret_code_t err_code;
-
-  app_pwm_config_t out_cfg = APP_PWM_DEFAULT_CONFIG_1CH(freq_to_period_us(freq), pin); // period  = 1 / freq
-
-  // Switch the polarity of the second channel.
-  out_cfg.pin_polarity[0] = APP_PWM_POLARITY_ACTIVE_HIGH;
-
-  // Initialize and enable PWM.
-  err_code = app_pwm_init(&BLE_PWM2, &out_cfg, ble_pwm_ready_callback);
-  APP_ERROR_CHECK(err_code);
-  app_pwm_enable(&BLE_PWM2);
-  ble_pwm2_enable_flag = true;
-  pwm2_frequency = freq;
-  for (uint8_t i = 0; i < out_cfg.num_of_channels; i++) {
-    APP_ERROR_CHECK(app_pwm_channel_duty_set(&BLE_PWM2, i, dutyCycle));
-  }
-}
-
-
-// init_ble_pwm3()
-static void init_ble_pwm3(uint32_t pin, uint32_t freq, float dutyCycle) {
-  ret_code_t err_code;
-
-  app_pwm_config_t out_cfg = APP_PWM_DEFAULT_CONFIG_1CH(freq_to_period_us(freq), pin); // period  = 1 / freq
-
-  // Switch the polarity of the second channel.
-  out_cfg.pin_polarity[0] = APP_PWM_POLARITY_ACTIVE_HIGH;
-
-  // Initialize and enable PWM.
-  err_code = app_pwm_init(&BLE_PWM3, &out_cfg, ble_pwm_ready_callback);
-  APP_ERROR_CHECK(err_code);
-  app_pwm_enable(&BLE_PWM3);
-  ble_pwm3_enable_flag = true;
-  pwm3_frequency = freq;
-  for (uint8_t i = 0; i < out_cfg.num_of_channels; i++) {
-    APP_ERROR_CHECK(app_pwm_channel_duty_set(&BLE_PWM3, i, dutyCycle));
-  }
-}
-
-
 // deinit_ble_pwm1()
 static void deinit_ble_pwm1() {
   app_pwm_disable(&BLE_PWM1);
@@ -905,27 +847,7 @@ static void deinit_ble_pwm1() {
 }
 
 
-// deinit_ble_pwm2()
-static void deinit_ble_pwm2() {
-  app_pwm_disable(&BLE_PWM2);
-
-  APP_ERROR_CHECK(app_pwm_uninit(&BLE_PWM2));
-  ble_pwm2_enable_flag = false;
-  pwm2_frequency = 0;
-}
-
-
-// deinit_ble_pwm3()
-static void deinit_ble_pwm3() {
-  app_pwm_disable(&BLE_PWM3);
-
-  APP_ERROR_CHECK(app_pwm_uninit(&BLE_PWM3));
-  ble_pwm3_enable_flag = false;
-  pwm3_frequency = 0;
-}
-
-
-// pump_all_off() created by C.Y.Kim
+// pump_all_off() 
 static void pump_all_off() {
   if (app_timer_flag) {
     ret_code_t err_code = app_timer_stop(m_app_timer);
@@ -1270,6 +1192,7 @@ static void on_cus_evt(ble_cus_t *p_cus_service, ble_cus_evt_t *p_evt, uint8_t *
       // Signal that DFU mode is to be enter to the power management module
       nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_GOTO_DFU);
     }
+    break;
 
   default:
     break;
@@ -1354,7 +1277,7 @@ int saadc_measure1() {
 }
 
 
-// timer_handler() modified by C.Y.Kim
+// timer_handler()
 void timer_handler(nrf_timer_event_t event_type, void *p_context) {
   electrolysis_timer_sec = electrolysis_timer_sec + 1;
 }
@@ -1406,7 +1329,7 @@ static void advertising_start(bool erase_bonds) {
 }
 
 
-// app_timer_handler() added by C.Y.Kim
+// app_timer_handler() 
 static void app_timer_handler(void * p_context) {
   electrolysis_timer_sec = electrolysis_timer_sec + 1;
 
@@ -1416,7 +1339,7 @@ static void app_timer_handler(void * p_context) {
 }
 
 
-// app_timers_init() modified by C.Y.Kim
+// app_timers_init()
 static void app_timers_init(void) {
   // Initialize timer module, making it use the scheduler
   ret_code_t err_code;
