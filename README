@@ -5,7 +5,7 @@ neuromodulation system, as described in:
 
 > [Eun Young Jeong†, Jong Woo Park†, Sungwoo Cho, Donggi Han, Choong Yeon Kim, Sung Woo Kim, Wonhee Lee, Wha Young Kim*, Jeong-Hoon Kim*, Jae-Woong Jeong*]. 
 > IoT-enabled wireless neural implant for chronic, programmable neuropharmacology and optogenetics. 
-> *Science Advances* (in revision).
+> *Science Advances*.
 
 ## Hardware
 - SoC module: EYSHSNZWZ (Taiyo Yuden, nRF52840)
