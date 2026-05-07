@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+NOTICE: Portions of this software are derived from the Nordic 
+Semiconductor ASA nRF5 SDK, which is subject to a separate license. 
+The Nordic license is reproduced in NORDIC_LICENSE.txt and applies 
+to all files incorporating Nordic Semiconductor ASA code. Use of 
+this software requires compliance with both licenses.
